@@ -8,6 +8,7 @@ import com.example.cloudservice.config.UserDetailsImpl;
 import com.example.cloudservice.entity.MyUser;
 import com.example.cloudservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.User;
