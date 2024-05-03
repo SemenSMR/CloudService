@@ -22,4 +22,8 @@ public class FileEntity {
     @Column(name = "file_content")
     private byte[] fileData;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private MyUser user;
+
 }

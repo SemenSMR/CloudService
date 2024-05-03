@@ -5,6 +5,7 @@ import com.example.cloudservice.entity.MyUser;
 import com.example.cloudservice.repository.FileRepository;
 import com.example.cloudservice.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,8 +23,14 @@ public class FileService {
     private PasswordEncoder passwordEncoder;
 
     // Метод для вывода списка файлов
-    public List<FileEntity> getFileList() {
-        return fileRepository.findAll();
+    public List<FileEntity> getFileList(Long userId) {
+        Optional<MyUser> userOptional = userRepository.findById(userId);
+        if(userOptional.isPresent()) {
+            MyUser user = userOptional.get();
+            return fileRepository.findByUser(user);
+        }else {
+            throw new UsernameNotFoundException("User not found with id: " + userId);
+        }
 
     }
 
@@ -39,11 +46,14 @@ public class FileService {
 
 
     // Метод для добавления файла
-    public void uploadFile(String fileName, MultipartFile file) {
+    public void uploadFile(Long userId , MultipartFile file) {
         try {
+            MyUser user = userRepository.findById(userId)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
             FileEntity fileEntity = new FileEntity();
-            fileEntity.setFileName(fileName);
+            fileEntity.setFileName(file.getOriginalFilename());
             fileEntity.setFileData(file.getBytes());
+            fileEntity.setUser(user);
             fileRepository.save(fileEntity);
         } catch (IOException e) {
             e.printStackTrace();

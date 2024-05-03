@@ -3,6 +3,7 @@ package com.example.cloudservice.controller;
 import com.example.cloudservice.auth.AuthenticationRequest;
 import com.example.cloudservice.auth.AuthenticationResponse;
 import com.example.cloudservice.auth.RegisterRequest;
+import com.example.cloudservice.config.JwtService;
 import com.example.cloudservice.entity.FileEntity;
 import com.example.cloudservice.entity.MyUser;
 import com.example.cloudservice.service.AuthenticationService;
@@ -17,6 +18,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
+
+
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api")
@@ -24,12 +27,15 @@ public class FileController {
 
     private FileService fileService;
     private AuthenticationService service;
+    private JwtService jwtService;
 
 
     // Метод для получения списка файлов
     @GetMapping("/list")
-    public ResponseEntity<List<FileEntity>> getFileList() {
-        List<FileEntity> fileList = fileService.getFileList();
+    public ResponseEntity<List<FileEntity>> getFileList(@RequestHeader("Authorization") String token) {
+        System.out.println("Received token: {}" + token);
+        Long userId = jwtService.extractUserId(token.trim());
+        List<FileEntity> fileList = fileService.getFileList(userId);
         return ResponseEntity.ok(fileList);
     }
 
@@ -43,9 +49,9 @@ public class FileController {
 
     // Метод для добавления файла
     @PostMapping("/file")
-    public ResponseEntity<Void> uploadFile(@RequestParam("file") MultipartFile file) {
-
-        fileService.uploadFile(file.getOriginalFilename(), file);
+    public ResponseEntity<Void> uploadFile(@RequestHeader("Authorization") String token, @RequestParam("file") MultipartFile file) {
+        Long userId = jwtService.extractUserId(token);
+        fileService.uploadFile(userId, file);
         return ResponseEntity.ok().build();
     }
 
