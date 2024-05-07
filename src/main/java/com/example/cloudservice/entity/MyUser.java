@@ -1,6 +1,7 @@
 package com.example.cloudservice.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -11,6 +12,7 @@ import java.util.List;
 
 
 @AllArgsConstructor
+
 @NoArgsConstructor
 @Builder
 @Setter
@@ -25,10 +27,11 @@ public class MyUser {
     private Long id;
     @Column(name = "username", unique = true)
     private String username;
+    @JsonIgnore
     @Column(name = "password")
     private String password;
-
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "id")
+    @JsonIgnore
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "user")
     private List<FileEntity> fileEntityList;
 
 }

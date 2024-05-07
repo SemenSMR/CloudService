@@ -1,6 +1,6 @@
 package com.example.cloudservice;
 
-import com.example.cloudservice.config.JwtService;
+import com.example.cloudservice.service.JwtService;
 import com.example.cloudservice.controller.FileController;
 import com.example.cloudservice.entity.FileEntity;
 import com.example.cloudservice.entity.MyUser;
@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.http.ResponseEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,24 +35,18 @@ public class FileControllerTest {
 
     @Test
     public void testGetFileList() {
-        // Mocking token and user ID
+
         String token = "mockToken";
         Long userId = 1L;
 
-        // Mocking claims extraction
+
         when(jwtService.extractUserId(token)).thenReturn(userId);
 
-        // Mocking file list
+
         List<FileEntity> fileList = new ArrayList<>();
         fileList.add(new FileEntity(1L, "file1.txt", new byte[]{}, new MyUser())); // Адаптированный код
         fileList.add(new FileEntity(2L, "file2.txt", new byte[]{}, new MyUser())); // Адаптированный код
         when(fileService.getFileList(userId)).thenReturn(fileList);
 
-        // Calling the method under test
-        //ResponseEntity<List<FileEntity>> response = fileController.getFileList(token);
-
-        // Asserting the response
-       // assertEquals(200, response.getStatusCodeValue());
-       // assertEquals(fileList, response.getBody());
     }
 }

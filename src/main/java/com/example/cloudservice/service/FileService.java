@@ -2,15 +2,17 @@ package com.example.cloudservice.service;
 
 import com.example.cloudservice.entity.FileEntity;
 import com.example.cloudservice.entity.MyUser;
+import com.example.cloudservice.exception.FileNotFoundException;
+import com.example.cloudservice.exception.UsernameNotFoundException;
 import com.example.cloudservice.repository.FileRepository;
 import com.example.cloudservice.repository.UserRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.FileNotFoundException;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +29,7 @@ public class FileService {
         Optional<MyUser> userOptional = userRepository.findById(userId);
         if(userOptional.isPresent()) {
             MyUser user = userOptional.get();
-            return fileRepository.findByUser(user);
+            return fileRepository.findDistinctByUser(user);
         }else {
             throw new UsernameNotFoundException("User not found with id: " + userId);
         }
@@ -35,12 +37,13 @@ public class FileService {
     }
 
     // Метод скачивания файлов
-    public byte[] downloadFile(String fileName) throws FileNotFoundException {
-        Optional<FileEntity> optionalFile = fileRepository.findByFileName(fileName);
+    public byte[] downloadFile(String fileName, Long userId) throws FileNotFoundException {
+        Optional<FileEntity> optionalFile = fileRepository.findByFileNameAndUserId(fileName, userId);
         if (optionalFile.isPresent()) {
-            return optionalFile.get().getFileData();
+            FileEntity fileEntity = optionalFile.get();
+            return fileEntity.getFileData();
         } else {
-            throw new FileNotFoundException("File not found: " + fileName);
+            throw new FileNotFoundException("File not found or you don't have access to it: " + fileName);
         }
     }
 
@@ -61,9 +64,8 @@ public class FileService {
     }
 
     // Метод для удаления файла
-    public void deleteFile(String fileName) throws FileNotFoundException {
-
-        Optional<FileEntity> optionalFile = fileRepository.findByFileName(fileName);
+    public void deleteFile(String fileName,Long userId) throws FileNotFoundException {
+        Optional<FileEntity> optionalFile = fileRepository.findByFileNameAndUserId(fileName,userId);
         if (optionalFile.isPresent()) {
             fileRepository.delete(optionalFile.get());
         } else {
@@ -72,15 +74,15 @@ public class FileService {
     }
 
     // Метод для Изменение файла
-    public void editFileContent(String fileName, MultipartFile file) {
+    public void editFileContent(String fileName, MultipartFile file,Long userId) {
         try {
-            Optional<FileEntity> optionalFile = fileRepository.findByFileName(fileName);
+            Optional<FileEntity> optionalFile = fileRepository.findByFileNameAndUserId(fileName,userId);
             if (optionalFile.isPresent()) {
                 FileEntity fileEntity = optionalFile.get();
                 fileEntity.setFileData(file.getBytes());
                 fileRepository.save(fileEntity);
             } else {
-                System.out.println("Файл не найден");
+                throw new FileNotFoundException("File not found: " + fileName);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -92,13 +94,13 @@ public void addUser(MyUser user){
         userRepository.save(user);
 }
 
-   public boolean authenticate(String username , String password){
-        Optional<MyUser> userOptional = userRepository.findByUsername(username);
-        if(userOptional.isPresent()){
-            MyUser user = userOptional.get();
-            return passwordEncoder.matches(password,user.getPassword());
-        }
-        return false;
-   }
+//   public boolean authenticate(String username , String password){
+//        Optional<MyUser> userOptional = userRepository.findByUsername(username);
+//        if(userOptional.isPresent()){
+//            MyUser user = userOptional.get();
+//            return passwordEncoder.matches(password,user.getPassword());
+//        }
+//        return false;
+//   }
 }
 

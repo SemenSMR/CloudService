@@ -3,7 +3,6 @@ package com.example.cloudservice.service;
 import com.example.cloudservice.auth.AuthenticationRequest;
 import com.example.cloudservice.auth.AuthenticationResponse;
 import com.example.cloudservice.auth.RegisterRequest;
-import com.example.cloudservice.config.JwtService;
 import com.example.cloudservice.config.UserDetailsImpl;
 import com.example.cloudservice.entity.MyUser;
 import com.example.cloudservice.repository.UserRepository;

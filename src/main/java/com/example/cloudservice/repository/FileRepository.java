@@ -12,6 +12,8 @@ import java.util.Optional;
 public interface FileRepository extends JpaRepository<FileEntity, Long> {
     Optional<FileEntity> findByFileName(String fileName);
 
+    Optional<FileEntity> findByFileNameAndUserId(String fileName, Long userId);
 
-    List<FileEntity> findByUser(MyUser user);
+
+    List<FileEntity> findDistinctByUser(MyUser user);
 }
