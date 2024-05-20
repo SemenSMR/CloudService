@@ -86,7 +86,7 @@ public class FileServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         MultipartFile multipartFile = new MockMultipartFile("test.txt", "test.txt", "text/plain", "test content".getBytes());
 
-        fileService.uploadFile(userId, multipartFile);
+        fileService.uploadFile(userId, filename,multipartFile);
 
         verify(fileRepository, times(1)).save(any(FileEntity.class));
     }

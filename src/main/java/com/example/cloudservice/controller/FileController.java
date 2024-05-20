@@ -8,8 +8,11 @@ import com.example.cloudservice.entity.MyUser;
 import com.example.cloudservice.service.AuthenticationService;
 import com.example.cloudservice.service.FileService;
 import com.example.cloudservice.service.JwtService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
+import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,7 +23,7 @@ import java.util.List;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/api")
+//@RequestMapping("/api")
 public class FileController {
 
     private FileService fileService;
@@ -38,37 +41,40 @@ public class FileController {
 
     // Метод для скачивания файла+++
     @GetMapping("/file/{fileName}")
-    public ResponseEntity<byte[]> downloadFile( @PathVariable String fileName,  @RequestHeader("Authorization") String token) throws IOException {
+    public ResponseEntity<byte[]> downloadFile(@PathVariable String fileName, @RequestHeader("Authorization") String token) throws IOException {
         Long userId = jwtService.extractUserId(token.trim());
-        byte[] file = fileService.downloadFile(fileName,userId);
+        byte[] file = fileService.downloadFile(fileName, userId);
         return ResponseEntity.ok().body(file);
     }
 
 
     // Метод для добавления файла  ++
     @PostMapping("/file")
-    public ResponseEntity<Void> uploadFile(@RequestHeader("Authorization") String token, @RequestParam("file") MultipartFile file) {
+    @CrossOrigin(origins = "http://localhost:8081")
+    public ResponseEntity<Void> uploadFile(@PathVariable("filename") String filename, @RequestPart("file") MultipartFile file, @RequestHeader("Authorization") String token,HttpServletResponse response) {
         Long userId = jwtService.extractUserId(token);
-        fileService.uploadFile(userId, file);
+        fileService.uploadFile(userId, filename, file);
+        response.setHeader("Access-Control-Allow-Origin", "http://localhost:8081");
         return ResponseEntity.ok().build();
     }
 
     // Метод для удаления файла+++
     @DeleteMapping("/file/{fileName}")
-    public ResponseEntity<Void> deleteFile(@PathVariable String fileName,@RequestHeader("Authorization") String token) throws FileNotFoundException {
+    public ResponseEntity<Void> deleteFile(@PathVariable String fileName, @RequestHeader("Authorization") String token) throws FileNotFoundException {
         Long userId = jwtService.extractUserId(token);
-        fileService.deleteFile(fileName,userId);
+        fileService.deleteFile(fileName, userId);
         return ResponseEntity.ok().build();
     }
 
     // Добавление метода редактирования содержимого файла
     @PutMapping("/file/{fileName}")
-    public ResponseEntity<Void> editFileContent(@PathVariable String fileName, @RequestParam("file") MultipartFile file,@RequestHeader("Authorization") String token) {
+    public ResponseEntity<Void> editFileContent(@PathVariable String fileName, @RequestParam("file") MultipartFile file, @RequestHeader("Authorization") String token) {
         Long userId = jwtService.extractUserId(token);
-        fileService.editFileContent(fileName, file,userId);
+        fileService.editFileContent(fileName, file, userId);
         return ResponseEntity.ok().build();
     }
-// Добавление в базу польщователя , он не нужен
+
+    // Добавление в базу польщователя , он не нужен
     @PostMapping("/file/add")
     public ResponseEntity<Void> addUser(@RequestBody MyUser user) {
         fileService.addUser(user);
@@ -84,5 +90,12 @@ public class FileController {
     @PostMapping("/authenticate")
     public ResponseEntity<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request) {
         return ResponseEntity.ok(service.authenticate(request));
+    }
+
+    @PostMapping("/login")
+    @CrossOrigin(origins = "http://localhost:8081")
+    public ResponseEntity<?> login(@RequestBody AuthenticationRequest loginRequest, HttpServletResponse response) {
+        response.setHeader("Access-Control-Allow-Origin", "http://localhost:8081");
+        return service.login(loginRequest);
     }
 }

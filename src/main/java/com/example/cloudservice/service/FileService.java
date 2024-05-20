@@ -49,12 +49,12 @@ public class FileService {
 
 
     // Метод для добавления файла
-    public void uploadFile(Long userId , MultipartFile file) {
+    public void uploadFile(Long userId ,String filename, MultipartFile file) {
         try {
             MyUser user = userRepository.findById(userId)
                     .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
             FileEntity fileEntity = new FileEntity();
-            fileEntity.setFileName(file.getOriginalFilename());
+            fileEntity.setFileName(filename);
             fileEntity.setFileData(file.getBytes());
             fileEntity.setUser(user);
             fileRepository.save(fileEntity);
