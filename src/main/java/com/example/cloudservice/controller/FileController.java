@@ -49,12 +49,11 @@ public class FileController {
 
 
     // Метод для добавления файла  ++
-    @PostMapping("/file")
+    @PostMapping("/file/{filename}")
     @CrossOrigin(origins = "http://localhost:8081")
-    public ResponseEntity<Void> uploadFile(@PathVariable("filename") String filename, @RequestPart("file") MultipartFile file, @RequestHeader("Authorization") String token,HttpServletResponse response) {
+    public ResponseEntity<Void> uploadFile(@PathVariable("filename") String filename, @RequestPart("file") MultipartFile file, @RequestHeader("Authorization") String token) {
         Long userId = jwtService.extractUserId(token);
         fileService.uploadFile(userId, filename, file);
-        response.setHeader("Access-Control-Allow-Origin", "http://localhost:8081");
         return ResponseEntity.ok().build();
     }
 
