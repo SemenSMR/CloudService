@@ -2,16 +2,14 @@ package com.example.cloudservice.entity;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "files", schema = "diplom")
 public class FileEntity {
     @Id
@@ -21,9 +19,13 @@ public class FileEntity {
     private String fileName;
     @Column(name = "file_content")
     private byte[] fileData;
-
-    @ManyToOne(fetch = FetchType.LAZY)
+    @Column(name = "file_size")
+    private Long fileSize;
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private MyUser user;
 
+    public void setFileSize(Long fileSize) {
+        this.fileSize = fileSize;
+    }
 }

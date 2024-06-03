@@ -1,5 +1,7 @@
 package com.example.cloudservice.service;
 
+import com.example.cloudservice.dto.EditFileNameRequest;
+import com.example.cloudservice.dto.FileListResponse;
 import com.example.cloudservice.entity.FileEntity;
 import com.example.cloudservice.entity.MyUser;
 import com.example.cloudservice.exception.FileNotFoundException;
@@ -8,14 +10,21 @@ import com.example.cloudservice.repository.FileRepository;
 import com.example.cloudservice.repository.UserRepository;
 import lombok.AllArgsConstructor;
 
+
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 
 import java.io.IOException;
+import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -25,19 +34,22 @@ public class FileService {
     private PasswordEncoder passwordEncoder;
 
     // Метод для вывода списка файлов
-    public List<FileEntity> getFileList(Long userId) {
+    public List<FileListResponse> getFileList(Long userId, Integer limit) {
+        Pageable pageable = PageRequest.of(0, limit);
         Optional<MyUser> userOptional = userRepository.findById(userId);
-        if(userOptional.isPresent()) {
-            MyUser user = userOptional.get();
-            return fileRepository.findDistinctByUser(user);
-        }else {
+        if (userOptional.isEmpty()) {
             throw new UsernameNotFoundException("User not found with id: " + userId);
         }
+        MyUser user = userOptional.get();
+        List<FileEntity> fileList = fileRepository.findAllByUser(user, pageable);
+        return fileList.stream()
+                .map(file -> new FileListResponse(file.getFileName(), file.getFileSize()))
+                .collect(Collectors.toList());
 
     }
 
     // Метод скачивания файлов
-    public byte[] downloadFile(String fileName, Long userId) throws FileNotFoundException {
+    public byte[] downloadFile(String fileName, Long userId) throws FileNotFoundException, IOException {
         Optional<FileEntity> optionalFile = fileRepository.findByFileNameAndUserId(fileName, userId);
         if (optionalFile.isPresent()) {
             FileEntity fileEntity = optionalFile.get();
@@ -49,23 +61,22 @@ public class FileService {
 
 
     // Метод для добавления файла
-    public void uploadFile(Long userId ,String filename, MultipartFile file) {
-        try {
-            MyUser user = userRepository.findById(userId)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
-            FileEntity fileEntity = new FileEntity();
-            fileEntity.setFileName(filename);
-            fileEntity.setFileData(file.getBytes());
-            fileEntity.setUser(user);
-            fileRepository.save(fileEntity);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public FileListResponse uploadFile(Long userId, String filename, MultipartFile file) throws IOException {
+        FileEntity fileEntity = new FileEntity();
+        fileEntity.setFileName(filename);
+        fileEntity.setFileData(file.getBytes());
+        fileEntity.setFileSize(file.getSize());
+        fileEntity.setUser(userRepository.findById(userId).orElseThrow());
+        fileRepository.saveAndFlush(fileEntity);
+        FileListResponse fileListResponse = new FileListResponse();
+        fileListResponse.setFilename(fileEntity.getFileName());
+        fileListResponse.setSize(fileEntity.getFileSize());
+        return fileListResponse;
     }
 
     // Метод для удаления файла
-    public void deleteFile(String fileName,Long userId) throws FileNotFoundException {
-        Optional<FileEntity> optionalFile = fileRepository.findByFileNameAndUserId(fileName,userId);
+    public void deleteFile(String fileName, Long userId) throws FileNotFoundException {
+        Optional<FileEntity> optionalFile = fileRepository.findByFileNameAndUserId(fileName, userId);
         if (optionalFile.isPresent()) {
             fileRepository.delete(optionalFile.get());
         } else {
@@ -74,20 +85,28 @@ public class FileService {
     }
 
     // Метод для Изменение файла
-    public void editFileContent(String fileName, MultipartFile file,Long userId) {
+    public void editFileContent(String fileName, EditFileNameRequest editFileNameRequest, Long userId) {
         try {
-            Optional<FileEntity> optionalFile = fileRepository.findByFileNameAndUserId(fileName,userId);
+            Optional<FileEntity> optionalFile = fileRepository.findByFileNameAndUserId(fileName, userId);
             if (optionalFile.isPresent()) {
                 FileEntity fileEntity = optionalFile.get();
-                fileEntity.setFileData(file.getBytes());
-                fileRepository.save(fileEntity);
+                if (editFileNameRequest.getFilename() != null && !editFileNameRequest.getFilename().isEmpty()) {
+                    fileEntity.setFileName(editFileNameRequest.getFilename());
+                    fileRepository.save(fileEntity);
+                } else {
+                    throw new IllegalArgumentException("New filename is null or empty");
+                }
             } else {
                 throw new FileNotFoundException("File not found: " + fileName);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException(e);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
+
+
 
 public void addUser(MyUser user){
         user.setPassword(passwordEncoder.encode(user.getPassword()));

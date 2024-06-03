@@ -3,14 +3,18 @@ package com.example.cloudservice.controller;
 import com.example.cloudservice.auth.AuthenticationRequest;
 import com.example.cloudservice.auth.AuthenticationResponse;
 import com.example.cloudservice.auth.RegisterRequest;
+import com.example.cloudservice.dto.EditFileNameRequest;
+import com.example.cloudservice.dto.FileListResponse;
 import com.example.cloudservice.entity.FileEntity;
 import com.example.cloudservice.entity.MyUser;
 import com.example.cloudservice.service.AuthenticationService;
 import com.example.cloudservice.service.FileService;
 import com.example.cloudservice.service.JwtService;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
@@ -33,43 +37,45 @@ public class FileController {
 
     // Метод для получения списка файлов ++
     @GetMapping("/list")
-    public ResponseEntity<List<FileEntity>> getFileList(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<List<FileListResponse>> getFileList(@RequestHeader("Auth-token") String token, @RequestParam("limit") Integer limit) {
         Long userId = jwtService.extractUserId(token.trim());
-        List<FileEntity> fileList = fileService.getFileList(userId);
-        return ResponseEntity.ok(fileList);
+        List<FileListResponse> fileListResponses = fileService.getFileList(userId, limit);
+        return ResponseEntity.ok(fileListResponses);
     }
 
     // Метод для скачивания файла+++
-    @GetMapping("/file/{fileName}")
-    public ResponseEntity<byte[]> downloadFile(@PathVariable String fileName, @RequestHeader("Authorization") String token) throws IOException {
+    @GetMapping("/file")
+    public ResponseEntity<byte[]> downloadFile(@RequestHeader("Auth-token") String token, @RequestParam String filename) throws IOException {
         Long userId = jwtService.extractUserId(token.trim());
-        byte[] file = fileService.downloadFile(fileName, userId);
-        return ResponseEntity.ok().body(file);
+        byte[] file = fileService.downloadFile(filename, userId);
+        return ResponseEntity.ok(file);
     }
 
 
     // Метод для добавления файла  ++
-    @PostMapping("/file/{filename}")
-    @CrossOrigin(origins = "http://localhost:8081")
-    public ResponseEntity<Void> uploadFile(@PathVariable("filename") String filename, @RequestPart("file") MultipartFile file, @RequestHeader("Authorization") String token) {
+    @PostMapping("/file")
+    public ResponseEntity<FileListResponse> uploadFile(
+            @RequestParam("filename") String filename,
+            @RequestParam("file") MultipartFile file,
+            @RequestHeader("Auth-Token") String token) throws IOException {
         Long userId = jwtService.extractUserId(token);
-        fileService.uploadFile(userId, filename, file);
-        return ResponseEntity.ok().build();
+       FileListResponse fileListResponses = fileService.uploadFile(userId, filename, file);
+        return ResponseEntity.ok(fileListResponses);
     }
 
     // Метод для удаления файла+++
-    @DeleteMapping("/file/{fileName}")
-    public ResponseEntity<Void> deleteFile(@PathVariable String fileName, @RequestHeader("Authorization") String token) throws FileNotFoundException {
+    @DeleteMapping("/file")
+    public ResponseEntity<Void> deleteFile(@RequestParam String filename, @RequestHeader("Auth-Token") String token) throws FileNotFoundException {
         Long userId = jwtService.extractUserId(token);
-        fileService.deleteFile(fileName, userId);
+        fileService.deleteFile(filename, userId);
         return ResponseEntity.ok().build();
     }
 
     // Добавление метода редактирования содержимого файла
-    @PutMapping("/file/{fileName}")
-    public ResponseEntity<Void> editFileContent(@PathVariable String fileName, @RequestParam("file") MultipartFile file, @RequestHeader("Authorization") String token) {
+    @PutMapping(value = "/file")
+    public ResponseEntity<Void> editFileContent(@RequestHeader("Auth-Token") String token , @RequestParam String filename, @RequestBody EditFileNameRequest editFileNameRequest) {
         Long userId = jwtService.extractUserId(token);
-        fileService.editFileContent(fileName, file, userId);
+        fileService.editFileContent(filename, editFileNameRequest, userId);
         return ResponseEntity.ok().build();
     }
 

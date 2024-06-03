@@ -46,7 +46,7 @@ public class FileControllerTest {
         List<FileEntity> fileList = new ArrayList<>();
         fileList.add(new FileEntity(1L, "file1.txt", new byte[]{}, new MyUser())); // Адаптированный код
         fileList.add(new FileEntity(2L, "file2.txt", new byte[]{}, new MyUser())); // Адаптированный код
-        when(fileService.getFileList(userId)).thenReturn(fileList);
+        when(fileService.getFileList(userId,list)).thenReturn(fileList);
 
     }
 }
